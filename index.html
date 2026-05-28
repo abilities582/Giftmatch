@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gift Match</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --coral: #F96167;
+    --coral-dark: #E8474D;
+    --navy: #2F3C7E;
+    --cream: #FFF8F0;
+    --gold: #F9E795;
+    --ink: #1F2433;
+    --muted: #8A8F9E;
+    --card: #FFFFFF;
+    --border: #F0E6DA;
+    --shadow: 0 4px 20px rgba(47, 60, 126, 0.08);
+    --radius: 20px;
+  }
+
+  /* Тёмная тема Telegram */
+  body.dark {
+    --cream: #17181C;
+    --ink: #F0F1F5;
+    --muted: #8A8F9E;
+    --card: #23252B;
+    --border: #2E3138;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Onest', -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    overscroll-behavior: none;
+    padding-bottom: 80px;
+    transition: background 0.3s;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    padding: 20px 18px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    width: 46px; height: 46px;
+    background: var(--coral);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 800; font-size: 26px; color: #fff;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(249, 97, 103, 0.35);
+  }
+  .logo-mark::after {
+    content: ''; position: absolute; top: 8px; right: 8px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--gold);
+  }
+  .logo-text { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 20px; line-height: 1; }
+  .logo-text span { color: var(--coral); }
+  .logo-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; padding: 0 18px; animation: fadeIn 0.35s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== AI SEARCH ===== */
+  .ai-box {
+    background: linear-gradient(135deg, var(--navy), #3D4A92);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-box::before {
+    content: '✨'; position: absolute; right: -10px; top: -10px;
+    font-size: 80px; opacity: 0.12; transform: rotate(15deg);
+  }
+  .ai-title { color: #fff; font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .ai-desc { color: rgba(255,255,255,0.7); font-size: 12.5px; margin-bottom: 12px; }
+  .ai-input-row { display: flex; gap: 8px; }
+  .ai-input {
+    flex: 1; border: none; border-radius: 12px; padding: 12px 14px;
+    font-family: 'Onest', sans-serif; font-size: 14px; background: rgba(255,255,255,0.95); color: var(--ink);
+  }
+  .ai-input:focus { outline: 2px solid var(--gold); }
+  .ai-btn {
+    background: var(--coral); border: none; border-radius: 12px;
+    color: #fff; font-size: 20px; width: 46px; cursor: pointer; flex-shrink: 0;
+    transition: transform 0.15s, background 0.2s;
+  }
+  .ai-btn:active { transform: scale(0.92); background: var(--coral-dark); }
+
+  /* ===== DIVIDER ===== */
+  .divider { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .divider span { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+  /* ===== FILTER GROUPS ===== */
+  .filter-group { margin-bottom: 18px; }
+  .filter-label { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 9px; display: flex; align-items: center; gap: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 9px 15px; border-radius: 100px; border: 1.5px solid var(--border);
+    background: var(--card); color: var(--ink); font-size: 13.5px; font-weight: 500;
+    cursor: pointer; transition: all 0.18s; font-family: 'Onest', sans-serif;
+  }
+  .chip:active { transform: scale(0.95); }
+  .chip.selected {
+    background: var(--coral); border-color: var(--coral); color: #fff;
+    box-shadow: 0 3px 10px rgba(249, 97, 103, 0.3);
+  }
+
+  /* ===== MAIN BUTTON ===== */
+  .submit-btn {
+    width: 100%; padding: 16px; border: none; border-radius: 16px;
+    background: var(--coral); color: #fff;
+    font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 15px;
+    cursor: pointer; margin: 6px 0 24px;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: 0 6px 18px rgba(249, 97, 103, 0.35);
+  }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { opacity: 0.5; box-shadow: none; }
+
+  /* ===== GIFT CARDS ===== */
+  .results-title { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 16px; margin: 4px 0 14px; }
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid var(--border);
+    animation: cardIn 0.4s ease backwards;
+  }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .card-top { display: flex; gap: 13px; align-items: flex-start; }
+  .card-emoji {
+    width: 50px; height: 50px; border-radius: 14px; background: var(--cream);
+    display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0;
+  }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-weight: 600; font-size: 15px; line-height: 1.25; margin-bottom: 3px; }
+  .card-price { font-size: 13px; color: var(--coral); font-weight: 600; }
+  .card-fav {
+    background: none; border: none; font-size: 22px; cursor: pointer; padding: 2px;
+    transition: transform 0.2s; flex-shrink: 0;
+  }
+  .card-fav:active { transform: scale(1.3); }
+  .card-desc { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 11px 0 13px; }
+  .buy-row { display: flex; gap: 7px; }
+  .buy-link {
+    flex: 1; text-align: center; padding: 9px; border-radius: 11px;
+    background: var(--cream); color: var(--navy); font-size: 12.5px; font-weight: 600;
+    text-decoration: none; border: 1px solid var(--border); transition: all 0.18s;
+  }
+  .buy-link:active { background: var(--coral); color: #fff; }
+  body.dark .buy-link { color: var(--gold); }
+
+  /* ===== EMPTY STATE ===== */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-emoji { font-size: 54px; margin-bottom: 14px; opacity: 0.7; }
+  .empty-text { font-size: 14px; line-height: 1.5; }
+
+  /* ===== LOADER ===== */
+  .loader { text-align: center; padding: 30px; display: none; }
+  .loader.show { display: block; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--coral); border-radius: 50%;
+    margin: 0 auto 10px; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text { font-size: 13px; color: var(--muted); }
+
+  /* ===== BOTTOM NAV ===== */
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--card); border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; cursor: pointer; padding: 6px; color: var(--muted);
+    font-family: 'Onest', sans-serif; font-size: 11px; font-weight: 500; transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--coral); }
+  .nav-icon { font-size: 22px; }
+
+  .history-item {
+    background: var(--card); border-radius: 14px; padding: 13px 15px; margin-bottom: 10px;
+    border: 1px solid var(--border); font-size: 13.5px;
+  }
+  .history-meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .history-date { font-size: 11px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-mark">G</div>
+  <div>
+    <div class="logo-text">Gift<span>Match</span></div>
+    <div class="logo-sub">Идеальный подарок за 2 минуты</div>
+  </div>
+</div>
+
+<!-- ЭКРАН: ПОДБОР -->
+<div class="screen active" id="screen-picker">
+  <div class="ai-box">
+    <div class="ai-title">✨ Опишите словами</div>
+    <div class="ai-desc">Например: «парень, любит горы, кофе и фотографию»</div>
+    <div class="ai-input-row">
+      <input class="ai-input" id="ai-input" placeholder="Кому ищем подарок?" maxlength="200">
+      <button class="ai-btn" id="ai-go">→</button>
+    </div>
+  </div>
+
+  <div class="divider"><span>или подберите по фильтрам</span></div>
+
+  <div id="filters"></div>
+
+  <button class="submit-btn" id="submit">🎁 Подобрать подарок</button>
+
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <div class="loader-text" id="loader-text">Подбираем варианты…</div>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<!-- ЭКРАН: ИЗБРАННОЕ -->
+<div class="screen" id="screen-fav">
+  <div id="fav-list"></div>
+</div>
+
+<!-- ЭКРАН: ИСТОРИЯ -->
+<div class="screen" id="screen-history">
+  <div id="history-list"></div>
+</div>
+
+<!-- НИЖНЯЯ НАВИГАЦИЯ -->
+<div class="nav">
+  <button class="nav-item active" data-screen="picker"><span class="nav-icon">🎁</span>Подбор</button>
+  <button class="nav-item" data-screen="fav"><span class="nav-icon">⭐</span>Избранное</button>
+  <button class="nav-item" data-screen="history"><span class="nav-icon">🕐</span>История</button>
+</div>
+
+<script>
+// ====== БАЗА ПОДАРКОВ ======
+const GIFTS = [{"name":"Букет пионов или ранункулюсов","desc":"Классика романтических подарков — свежие сезонные цветы, не банальные розы","pmin":2500,"pmax":5000,"rec":["girlfriend","mom"],"occ":["birthday","valentines","march8","general"],"tags":["emotional","romantic","calm"],"emoji":"💐","buy":[["💐 Flowwow","https://flowwow.com/"]]},{"name":"Подарочный сертификат в SPA-салон","desc":"Полдня релакса: массаж, обёртывание, чай. Снимет стресс лучше любой вещи","pmin":5000,"pmax":10000,"rec":["girlfriend","mom"],"occ":["birthday","march8","valentines","general"],"tags":["emotional","calm","romantic"],"emoji":"💆","buy":[["💆 Biglion","https://www.biglion.ru/"]]},{"name":"Свеча ручной работы с авторским ароматом","desc":"Соевая свеча в керамическом сосуде, аромат «Утренний кофе» или «Лесной мох»","pmin":1500,"pmax":3000,"rec":["girlfriend","mom","colleague"],"occ":["birthday","newyear","march8","general"],"tags":["emotional","calm"],"emoji":"🕯","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%B0%D1%80%D0%BE%D0%BC%D0%B0%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F+%D1%81%D0%B2%D0%B5%D1%87%D0%B0+%D1%81%D0%BE%D0%B5%D0%B2%D0%B0%D1%8F&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%B0%D1%80%D0%BE%D0%BC%D0%B0%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F+%D1%81%D0%B2%D0%B5%D1%87%D0%B0+%D1%81%D0%BE%D0%B5%D0%B2%D0%B0%D1%8F"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%B0%D1%80%D0%BE%D0%BC%D0%B0%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F+%D1%81%D0%B2%D0%B5%D1%87%D0%B0+%D1%81%D0%BE%D0%B5%D0%B2%D0%B0%D1%8F"]]},{"name":"Серьги-кафф с минимализмом","desc":"Современный стильный аксессуар: одна сторона лица украшена цепочками","pmin":3000,"pmax":8000,"rec":["girlfriend"],"occ":["birthday","valentines","general"],"tags":["emotional","romantic","active"],"emoji":"💍","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D1%81%D0%B5%D1%80%D1%8C%D0%B3%D0%B8+%D0%BA%D0%B0%D1%84%D1%84&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D1%81%D0%B5%D1%80%D1%8C%D0%B3%D0%B8+%D0%BA%D0%B0%D1%84%D1%84"],["🟡 Маркет","https://market.yandex.ru/search?text=%D1%81%D0%B5%D1%80%D1%8C%D0%B3%D0%B8+%D0%BA%D0%B0%D1%84%D1%84"]]},{"name":"Парный браслет с гравировкой координат","desc":"Координаты места первой встречи или важного момента ваших отношений","pmin":3000,"pmax":6000,"rec":["girlfriend","boyfriend"],"occ":["valentines","birthday","general"],"tags":["emotional","romantic"],"emoji":"💍","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BF%D0%B0%D1%80%D0%BD%D1%8B%D0%B5+%D0%B1%D1%80%D0%B0%D1%81%D0%BB%D0%B5%D1%82%D1%8B+%D0%B3%D1%80%D0%B0%D0%B2%D0%B8%D1%80%D0%BE%D0%B2%D0%BA%D0%B0&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BF%D0%B0%D1%80%D0%BD%D1%8B%D0%B5+%D0%B1%D1%80%D0%B0%D1%81%D0%BB%D0%B5%D1%82%D1%8B+%D0%B3%D1%80%D0%B0%D0%B2%D0%B8%D1%80%D0%BE%D0%B2%D0%BA%D0%B0"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BF%D0%B0%D1%80%D0%BD%D1%8B%D0%B5+%D0%B1%D1%80%D0%B0%D1%81%D0%BB%D0%B5%D1%82%D1%8B+%D0%B3%D1%80%D0%B0%D0%B2%D0%B8%D1%80%D0%BE%D0%B2%D0%BA%D0%B0"]]},{"name":"Подписка на Яндекс.Плюс или VK Музыку на год","desc":"Музыка, кино, сериалы, скидки на доставку — на 12 месяцев. Универсально и полезно","pmin":2000,"pmax":4000,"rec":["girlfriend","boyfriend","colleague","mom","dad"],"occ":["birthday","newyear","general"],"tags":["useful","active"],"emoji":"▶️","buy":[["▶️ Яндекс Плюс","https://plus.yandex.ru/"]]},{"name":"Премиальный шёлковый платок","desc":"Шёлк 100%, ручная роспись, можно носить как платок, повязку, шарфик","pmin":5000,"pmax":12000,"rec":["girlfriend","mom"],"occ":["birthday","march8","general"],"tags":["emotional","calm","romantic"],"emoji":"🧣","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D1%88%D1%91%D0%BB%D0%BA%D0%BE%D0%B2%D1%8B%D0%B9+%D0%BF%D0%BB%D0%B0%D1%82%D0%BE%D0%BA+%D0%B6%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D0%B9&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D1%88%D1%91%D0%BB%D0%BA%D0%BE%D0%B2%D1%8B%D0%B9+%D0%BF%D0%BB%D0%B0%D1%82%D0%BE%D0%BA+%D0%B6%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D0%B9"],["🟡 Маркет","https://market.yandex.ru/search?text=%D1%88%D1%91%D0%BB%D0%BA%D0%BE%D0%B2%D1%8B%D0%B9+%D0%BF%D0%BB%D0%B0%D1%82%D0%BE%D0%BA+%D0%B6%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D0%B9"]]},{"name":"Билеты на матч любимой команды","desc":"Сектор поближе к полю или ложа. Эмоциональный подарок, который запомнится надолго","pmin":3000,"pmax":10000,"rec":["boyfriend","dad"],"occ":["birthday","general"],"tags":["emotional","active","fun"],"emoji":"🎟","buy":[["🎟 Яндекс Афиша","https://afisha.yandex.ru/"]]},{"name":"Сертификат на сёрфинг/картинг/тир/полёт в аэротрубе","desc":"Адреналиновое впечатление — то, чего человек сам себе не купит","pmin":3000,"pmax":8000,"rec":["boyfriend","dad"],"occ":["birthday","general"],"tags":["emotional","active","fun"],"emoji":"🪂","buy":[["🪂 Mygiftcard","https://mygiftcard.ru/"]]},{"name":"Премиум-набор для бритья с помазком","desc":"Бритва с двумя сменными лезвиями, помазок из барсучьего волоса, бальзам после бритья","pmin":4000,"pmax":8000,"rec":["boyfriend","dad"],"occ":["birthday","general"],"tags":["useful","calm"],"emoji":"🪒","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%B4%D0%BB%D1%8F+%D0%B1%D1%80%D0%B8%D1%82%D1%8C%D1%8F+%D0%BF%D0%BE%D0%BC%D0%B0%D0%B7%D0%BE%D0%BA&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%B4%D0%BB%D1%8F+%D0%B1%D1%80%D0%B8%D1%82%D1%8C%D1%8F+%D0%BF%D0%BE%D0%BC%D0%B0%D0%B7%D0%BE%D0%BA"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%B4%D0%BB%D1%8F+%D0%B1%D1%80%D0%B8%D1%82%D1%8C%D1%8F+%D0%BF%D0%BE%D0%BC%D0%B0%D0%B7%D0%BE%D0%BA"]]},{"name":"Карта настольной игры Catan / Эволюция / Манчкин","desc":"Самая популярная стратегия, идеальна для вечеринок с друзьями","pmin":2500,"pmax":5000,"rec":["boyfriend","colleague","dad"],"occ":["birthday","newyear","general"],"tags":["fun","active"],"emoji":"🎲","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BD%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%B8%D0%B3%D1%80%D0%B0+%D0%BA%D0%BE%D0%BB%D0%BE%D0%BD%D0%B8%D0%B7%D0%B0%D1%82%D0%BE%D1%80%D1%8B&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BD%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%B8%D0%B3%D1%80%D0%B0+%D0%BA%D0%BE%D0%BB%D0%BE%D0%BD%D0%B8%D0%B7%D0%B0%D1%82%D0%BE%D1%80%D1%8B"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BD%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%B8%D0%B3%D1%80%D0%B0+%D0%BA%D0%BE%D0%BB%D0%BE%D0%BD%D0%B8%D0%B7%D0%B0%D1%82%D0%BE%D1%80%D1%8B"]]},{"name":"Беспроводные наушники Marshall / Sony","desc":"Стильные наушники с шумоподавлением, до 30 часов работы","pmin":8000,"pmax":18000,"rec":["boyfriend","girlfriend","colleague"],"occ":["birthday","newyear","general"],"tags":["useful","active"],"emoji":"🎧","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%B1%D0%B5%D1%81%D0%BF%D1%80%D0%BE%D0%B2%D0%BE%D0%B4%D0%BD%D1%8B%D0%B5+%D0%BD%D0%B0%D1%83%D1%88%D0%BD%D0%B8%D0%BA%D0%B8&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%B1%D0%B5%D1%81%D0%BF%D1%80%D0%BE%D0%B2%D0%BE%D0%B4%D0%BD%D1%8B%D0%B5+%D0%BD%D0%B0%D1%83%D1%88%D0%BD%D0%B8%D0%BA%D0%B8"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%B1%D0%B5%D1%81%D0%BF%D1%80%D0%BE%D0%B2%D0%BE%D0%B4%D0%BD%D1%8B%D0%B5+%D0%BD%D0%B0%D1%83%D1%88%D0%BD%D0%B8%D0%BA%D0%B8"]]},{"name":"Кожаный кошелёк или картхолдер с гравировкой","desc":"Натуральная кожа, лазерная гравировка инициалов или памятной фразы","pmin":2500,"pmax":6000,"rec":["boyfriend","dad"],"occ":["birthday","valentines","general"],"tags":["useful","emotional","calm"],"emoji":"👛","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BA%D0%BE%D0%B6%D0%B0%D0%BD%D1%8B%D0%B9+%D0%BA%D0%BE%D1%88%D0%B5%D0%BB%D1%91%D0%BA+%D0%BC%D1%83%D0%B6%D1%81%D0%BA%D0%BE%D0%B9&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BA%D0%BE%D0%B6%D0%B0%D0%BD%D1%8B%D0%B9+%D0%BA%D0%BE%D1%88%D0%B5%D0%BB%D1%91%D0%BA+%D0%BC%D1%83%D0%B6%D1%81%D0%BA%D0%BE%D0%B9"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BA%D0%BE%D0%B6%D0%B0%D0%BD%D1%8B%D0%B9+%D0%BA%D0%BE%D1%88%D0%B5%D0%BB%D1%91%D0%BA+%D0%BC%D1%83%D0%B6%D1%81%D0%BA%D0%BE%D0%B9"]]},{"name":"Карточная игра «Что? Где? Когда?» или «Имаджинариум»","desc":"Интеллектуальное развлечение для компании, занимает 1-2 часа","pmin":1500,"pmax":3500,"rec":["boyfriend","girlfriend","colleague"],"occ":["birthday","newyear","general"],"tags":["fun","calm"],"emoji":"🎲","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BD%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%B8%D0%B3%D1%80%D0%B0+%D0%B8%D0%BC%D0%B0%D0%B4%D0%B6%D0%B8%D0%BD%D0%B0%D1%80%D0%B8%D1%83%D0%BC&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BD%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%B8%D0%B3%D1%80%D0%B0+%D0%B8%D0%BC%D0%B0%D0%B4%D0%B6%D0%B8%D0%BD%D0%B0%D1%80%D0%B8%D1%83%D0%BC"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BD%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%B8%D0%B3%D1%80%D0%B0+%D0%B8%D0%BC%D0%B0%D0%B4%D0%B6%D0%B8%D0%BD%D0%B0%D1%80%D0%B8%D1%83%D0%BC"]]},{"name":"Сертификат на массаж или косметологическую процедуру","desc":"Уход, который мама себе сама не купит. Антистресс + забота","pmin":3000,"pmax":8000,"rec":["mom"],"occ":["birthday","march8","general"],"tags":["emotional","calm","useful"],"emoji":"💆","buy":[["💆 Biglion","https://www.biglion.ru/"]]},{"name":"Электрический чайник Smeg или подобный дизайнерский","desc":"Винтажный дизайн, разные температурные режимы. Будет украшать кухню","pmin":8000,"pmax":18000,"rec":["mom","dad"],"occ":["birthday","newyear","march8","general"],"tags":["useful","calm"],"emoji":"🫖","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D1%8D%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D1%87%D0%B0%D0%B9%D0%BD%D0%B8%D0%BA+%D0%B4%D0%B8%D0%B7%D0%B0%D0%B9%D0%BD%D0%B5%D1%80%D1%81%D0%BA%D0%B8%D0%B9&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D1%8D%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D1%87%D0%B0%D0%B9%D0%BD%D0%B8%D0%BA+%D0%B4%D0%B8%D0%B7%D0%B0%D0%B9%D0%BD%D0%B5%D1%80%D1%81%D0%BA%D0%B8%D0%B9"],["🟡 Маркет","https://market.yandex.ru/search?text=%D1%8D%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D1%87%D0%B0%D0%B9%D0%BD%D0%B8%D0%BA+%D0%B4%D0%B8%D0%B7%D0%B0%D0%B9%D0%BD%D0%B5%D1%80%D1%81%D0%BA%D0%B8%D0%B9"]]},{"name":"Фотокнига семейных снимков","desc":"Собрать лучшие фото семьи за год, заказать печать. Самый личный подарок","pmin":1500,"pmax":4000,"rec":["mom","dad"],"occ":["birthday","newyear","march8","general"],"tags":["emotional","calm","romantic"],"emoji":"📸","buy":[["📸 Mimigram","https://mimigram.ru/"]]},{"name":"Палантин или шаль из тонкой шерсти","desc":"Кашемир или меринос, классический орнамент. Тепло и стильно","pmin":3000,"pmax":8000,"rec":["mom"],"occ":["birthday","newyear","march8","general"],"tags":["useful","calm"],"emoji":"🧣","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BF%D0%B0%D0%BB%D0%B0%D0%BD%D1%82%D0%B8%D0%BD+%D1%88%D0%B5%D1%80%D1%81%D1%82%D1%8F%D0%BD%D0%BE%D0%B9&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BF%D0%B0%D0%BB%D0%B0%D0%BD%D1%82%D0%B8%D0%BD+%D1%88%D0%B5%D1%80%D1%81%D1%82%D1%8F%D0%BD%D0%BE%D0%B9"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BF%D0%B0%D0%BB%D0%B0%D0%BD%D1%82%D0%B8%D0%BD+%D1%88%D0%B5%D1%80%D1%81%D1%82%D1%8F%D0%BD%D0%BE%D0%B9"]]},{"name":"Набор натуральной косметики для лица","desc":"Сыворотка + крем + ампулы. Ставка на качество, а не на бренд","pmin":4000,"pmax":9000,"rec":["mom","girlfriend"],"occ":["birthday","march8","general"],"tags":["useful","calm"],"emoji":"🧴","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%BA%D0%BE%D1%81%D0%BC%D0%B5%D1%82%D0%B8%D0%BA%D0%B8+%D0%BB%D0%B8%D1%86%D0%BE&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%BA%D0%BE%D1%81%D0%BC%D0%B5%D1%82%D0%B8%D0%BA%D0%B8+%D0%BB%D0%B8%D1%86%D0%BE"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%BA%D0%BE%D1%81%D0%BC%D0%B5%D1%82%D0%B8%D0%BA%D0%B8+%D0%BB%D0%B8%D1%86%D0%BE"]]},{"name":"Букет полевых цветов + чай ручного сбора","desc":"Нежный сезонный букет + горный чай из Алтая в красивой упаковке","pmin":2500,"pmax":5000,"rec":["mom"],"occ":["birthday","march8","general"],"tags":["emotional","calm"],"emoji":"💐","buy":[["💐 Flowwow","https://flowwow.com/"]]},{"name":"Качественный набор отвёрток или мультитул Leatherman","desc":"Универсальный инструмент 18-в-1, помещается в карман","pmin":4000,"pmax":12000,"rec":["dad","boyfriend"],"occ":["birthday","general"],"tags":["useful","calm","active"],"emoji":"🛠","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%82%D1%83%D0%BB+leatherman&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%82%D1%83%D0%BB+leatherman"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%82%D1%83%D0%BB+leatherman"]]},{"name":"Билеты на концерт классической музыки или джаз","desc":"Консерватория, Дом музыки или Игорь Бутман — событие, которое запомнится","pmin":3000,"pmax":8000,"rec":["dad","mom"],"occ":["birthday","newyear","general"],"tags":["emotional","calm"],"emoji":"🎟","buy":[["🎷 Яндекс Афиша","https://afisha.yandex.ru/"]]},{"name":"Подарочный набор крафтового пива (10–12 сортов)","desc":"Локальные пивоварни, разные стили: IPA, стаут, портер. Дегустационная карточка","pmin":3000,"pmax":6000,"rec":["dad","boyfriend"],"occ":["birthday","newyear","general"],"tags":["fun","calm"],"emoji":"🍺","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%BF%D0%B8%D0%B2%D0%B0&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%BF%D0%B8%D0%B2%D0%B0"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D0%BF%D0%B8%D0%B2%D0%B0"]]},{"name":"Хорошие наручные часы (механические или smart)","desc":"Восток-Амфибия (механика, до 12 000) или Garmin (умные, до 25 000)","pmin":8000,"pmax":25000,"rec":["dad","boyfriend"],"occ":["birthday","newyear","general"],"tags":["useful","calm"],"emoji":"⌚","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BD%D0%B0%D1%80%D1%83%D1%87%D0%BD%D1%8B%D0%B5+%D1%87%D0%B0%D1%81%D1%8B+%D0%BC%D1%83%D0%B6%D1%81%D0%BA%D0%B8%D0%B5&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BD%D0%B0%D1%80%D1%83%D1%87%D0%BD%D1%8B%D0%B5+%D1%87%D0%B0%D1%81%D1%8B+%D0%BC%D1%83%D0%B6%D1%81%D0%BA%D0%B8%D0%B5"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BD%D0%B0%D1%80%D1%83%D1%87%D0%BD%D1%8B%D0%B5+%D1%87%D0%B0%D1%81%D1%8B+%D0%BC%D1%83%D0%B6%D1%81%D0%BA%D0%B8%D0%B5"]]},{"name":"Книга об истории или биография любимого человека","desc":"Тщательно подобранная книга — мужики любят читать дома вечером","pmin":800,"pmax":2500,"rec":["dad"],"occ":["birthday","newyear","general"],"tags":["useful","calm","emotional"],"emoji":"📚","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D0%B1%D0%B8%D0%BE%D0%B3%D1%80%D0%B0%D1%84%D0%B8%D1%8F+%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D0%B0%D1%8F&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D0%B1%D0%B8%D0%BE%D0%B3%D1%80%D0%B0%D1%84%D0%B8%D1%8F+%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D0%B0%D1%8F"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D0%B1%D0%B8%D0%BE%D0%B3%D1%80%D0%B0%D1%84%D0%B8%D1%8F+%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D0%B0%D1%8F"]]},{"name":"Подарочная коробка крафтового шоколада или орехов","desc":"Премиум-набор, красиво упакован. Универсальный и безопасный подарок","pmin":1500,"pmax":4000,"rec":["colleague"],"occ":["birthday","newyear","march8","general"],"tags":["useful","calm"],"emoji":"🍺","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D1%88%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%D0%B4&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D1%88%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%D0%B4"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BF%D0%BE%D0%B4%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9+%D0%BD%D0%B0%D0%B1%D0%BE%D1%80+%D1%88%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%D0%B4"]]},{"name":"Стильная многоразовая бутылка или термокружка","desc":"Stanley, Yeti или Contigo — функционально + статусно для офиса","pmin":2000,"pmax":5000,"rec":["colleague"],"occ":["birthday","newyear","general"],"tags":["useful","active"],"emoji":"🥤","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D1%82%D0%B5%D1%80%D0%BC%D0%BE%D0%BA%D1%80%D1%83%D0%B6%D0%BA%D0%B0+stanley&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D1%82%D0%B5%D1%80%D0%BC%D0%BE%D0%BA%D1%80%D1%83%D0%B6%D0%BA%D0%B0+stanley"],["🟡 Маркет","https://market.yandex.ru/search?text=%D1%82%D0%B5%D1%80%D0%BC%D0%BE%D0%BA%D1%80%D1%83%D0%B6%D0%BA%D0%B0+stanley"]]},{"name":"Подарочный сертификат в кофейню (Surf Coffee, Cofix)","desc":"Безопасный нейтральный подарок на 30 дней кофейного баланса","pmin":1000,"pmax":3000,"rec":["colleague"],"occ":["birthday","newyear","general"],"tags":["useful","fun"],"emoji":"☕","buy":[["☕ Surf Coffee","https://surfcoffee.ru/"]]},{"name":"Настольный планер на год + хорошая ручка Lamy","desc":"Стильно, практично, не банально. Подходит для офисного человека","pmin":2000,"pmax":5000,"rec":["colleague"],"occ":["birthday","newyear","general"],"tags":["useful","calm"],"emoji":"🎲","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%B5%D0%B6%D0%B5%D0%B4%D0%BD%D0%B5%D0%B2%D0%BD%D0%B8%D0%BA+%D0%BD%D0%B5%D0%B4%D0%B0%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9+%D0%BF%D1%80%D0%B5%D0%BC%D0%B8%D1%83%D0%BC&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%B5%D0%B6%D0%B5%D0%B4%D0%BD%D0%B5%D0%B2%D0%BD%D0%B8%D0%BA+%D0%BD%D0%B5%D0%B4%D0%B0%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9+%D0%BF%D1%80%D0%B5%D0%BC%D0%B8%D1%83%D0%BC"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%B5%D0%B6%D0%B5%D0%B4%D0%BD%D0%B5%D0%B2%D0%BD%D0%B8%D0%BA+%D0%BD%D0%B5%D0%B4%D0%B0%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9+%D0%BF%D1%80%D0%B5%D0%BC%D0%B8%D1%83%D0%BC"]]},{"name":"Юмористическая книга про офис или мемуары предпринимателя","desc":"«От нуля к единице», «Атлант расправил плечи» или Никита Лихачёв","pmin":800,"pmax":2000,"rec":["colleague","dad","boyfriend"],"occ":["birthday","newyear","general"],"tags":["fun","useful"],"emoji":"📚","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D0%B1%D0%B8%D0%B7%D0%BD%D0%B5%D1%81+%D0%B1%D0%B5%D1%81%D1%82%D1%81%D0%B5%D0%BB%D0%BB%D0%B5%D1%80&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D0%B1%D0%B8%D0%B7%D0%BD%D0%B5%D1%81+%D0%B1%D0%B5%D1%81%D1%82%D1%81%D0%B5%D0%BB%D0%BB%D0%B5%D1%80"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D0%B1%D0%B8%D0%B7%D0%BD%D0%B5%D1%81+%D0%B1%D0%B5%D1%81%D1%82%D1%81%D0%B5%D0%BB%D0%BB%D0%B5%D1%80"]]},{"name":"Авторская керамическая чашка ручной работы","desc":"Уникальная форма, никто такой больше не сделает. Душевно","pmin":600,"pmax":1500,"rec":["girlfriend","mom","colleague"],"occ":["birthday","march8","general"],"tags":["emotional","calm"],"emoji":"🍵","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BA%D0%B5%D1%80%D0%B0%D0%BC%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F+%D1%87%D0%B0%D1%88%D0%BA%D0%B0+%D1%80%D1%83%D1%87%D0%BD%D0%BE%D0%B9+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BA%D0%B5%D1%80%D0%B0%D0%BC%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F+%D1%87%D0%B0%D1%88%D0%BA%D0%B0+%D1%80%D1%83%D1%87%D0%BD%D0%BE%D0%B9+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BA%D0%B5%D1%80%D0%B0%D0%BC%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F+%D1%87%D0%B0%D1%88%D0%BA%D0%B0+%D1%80%D1%83%D1%87%D0%BD%D0%BE%D0%B9+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B"]]},{"name":"Игра-головоломка от Smart Games","desc":"Деревянная или пластиковая логическая игра на 30+ уровней","pmin":700,"pmax":1200,"rec":["colleague","boyfriend","girlfriend"],"occ":["birthday","newyear","general"],"tags":["fun","useful"],"emoji":"🎲","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BE%D0%BB%D0%BE%D0%BC%D0%BA%D0%B0+smart+games&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BE%D0%BB%D0%BE%D0%BC%D0%BA%D0%B0+smart+games"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BE%D0%BB%D0%BE%D0%BC%D0%BA%D0%B0+smart+games"]]},{"name":"Открытка ручной работы + плитка крафтового шоколада","desc":"Минимум денег, максимум души. Главное — что внутри открытки","pmin":400,"pmax":1000,"rec":["girlfriend","boyfriend","mom","dad","colleague"],"occ":["valentines","general","march8"],"tags":["emotional","romantic","calm"],"emoji":"🍺","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%BA%D0%B0+%D1%80%D1%83%D1%87%D0%BD%D0%BE%D0%B9+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%BA%D0%B0+%D1%80%D1%83%D1%87%D0%BD%D0%BE%D0%B9+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%BA%D0%B0+%D1%80%D1%83%D1%87%D0%BD%D0%BE%D0%B9+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B"]]},{"name":"Прикольные носки Happy Socks или St.Friday","desc":"Яркие, с авторским принтом. Юмор + полезность","pmin":500,"pmax":1500,"rec":["boyfriend","girlfriend","colleague","dad"],"occ":["birthday","newyear","general"],"tags":["fun","useful"],"emoji":"🧦","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BD%D0%BE%D1%81%D0%BA%D0%B8+happy+socks&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BD%D0%BE%D1%81%D0%BA%D0%B8+happy+socks"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BD%D0%BE%D1%81%D0%BA%D0%B8+happy+socks"]]},{"name":"Сертификат на романтический ужин в ресторане Michelin","desc":"White Rabbit, Sakhalin или другой ресторан-звезда. Незабываемый вечер","pmin":10000,"pmax":25000,"rec":["girlfriend","boyfriend"],"occ":["valentines","birthday","general"],"tags":["emotional","romantic","calm"],"emoji":"🍽","buy":[["🍽 Афиша Рестораны","https://www.afisha.ru/msk/restaurants/"]]},{"name":"Подарочная карта на путешествие выходного дня","desc":"На двоих в подмосковный загородный отель с СПА на 2 ночи","pmin":15000,"pmax":35000,"rec":["girlfriend","boyfriend","mom","dad"],"occ":["birthday","valentines","general","newyear"],"tags":["emotional","romantic","calm"],"emoji":"✈️","buy":[["✈️ Я.Путешествия","https://travel.yandex.ru/"]]},{"name":"Apple Watch SE или AirPods Pro","desc":"Премиум-гаджет, который человек точно будет носить ежедневно","pmin":15000,"pmax":30000,"rec":["girlfriend","boyfriend","colleague"],"occ":["birthday","newyear","general"],"tags":["useful","active"],"emoji":"🎧","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=apple+watch+se&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=apple+watch+se"],["🟡 Маркет","https://market.yandex.ru/search?text=apple+watch+se"]]},{"name":"Премиум-парфюм Tom Ford / Maison Margiela / Byredo","desc":"Нишевая парфюмерия с авторским ароматом — статусный подарок","pmin":10000,"pmax":25000,"rec":["girlfriend","boyfriend","mom"],"occ":["birthday","valentines","march8","general"],"tags":["emotional","romantic","calm"],"emoji":"🌸","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%BD%D0%B8%D1%88%D0%B5%D0%B2%D1%8B%D0%B9+%D0%BF%D0%B0%D1%80%D1%84%D1%8E%D0%BC&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%BD%D0%B8%D1%88%D0%B5%D0%B2%D1%8B%D0%B9+%D0%BF%D0%B0%D1%80%D1%84%D1%8E%D0%BC"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%BD%D0%B8%D1%88%D0%B5%D0%B2%D1%8B%D0%B9+%D0%BF%D0%B0%D1%80%D1%84%D1%8E%D0%BC"]]},{"name":"Курс по теме, которая интересна получателю","desc":"Skillbox, Нетология, Яндекс Практикум — на программирование, дизайн, маркетинг","pmin":10000,"pmax":50000,"rec":["boyfriend","girlfriend","colleague"],"occ":["birthday","newyear","general"],"tags":["useful","active"],"emoji":"🎓","buy":[["🎓 Skillbox","https://skillbox.ru/"]]},{"name":"Сертификат «Подарок наугад» от Mygiftcard","desc":"Получатель сам выбирает в каталоге 1000+ магазинов. Если не уверен — идеально","pmin":1000,"pmax":10000,"rec":["boyfriend","girlfriend","mom","dad","colleague"],"occ":["birthday","newyear","general"],"tags":["useful","fun"],"emoji":"🎫","buy":[["🎫 Mygiftcard","https://mygiftcard.ru/"]]},{"name":"Антистресс-набор: сквиш + капибара-плюш + ароматизатор","desc":"Юмористический набор для расслабления после тяжёлого дня. Каждый улыбнётся","pmin":1500,"pmax":3500,"rec":["girlfriend","colleague","boyfriend"],"occ":["birthday","newyear","general"],"tags":["fun","emotional"],"emoji":"🌸","buy":[["🛒 Ozon","https://www.ozon.ru/search/?text=%D0%B0%D0%BD%D1%82%D0%B8%D1%81%D1%82%D1%80%D0%B5%D1%81%D1%81+%D0%B8%D0%B3%D1%80%D1%83%D1%88%D0%BA%D0%B0+%D1%81%D0%BA%D0%B2%D0%B8%D1%88&utm_source=giftmatch&utm_medium=telegram"],["🛍 WB","https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%B0%D0%BD%D1%82%D0%B8%D1%81%D1%82%D1%80%D0%B5%D1%81%D1%81+%D0%B8%D0%B3%D1%80%D1%83%D1%88%D0%BA%D0%B0+%D1%81%D0%BA%D0%B2%D0%B8%D1%88"],["🟡 Маркет","https://market.yandex.ru/search?text=%D0%B0%D0%BD%D1%82%D0%B8%D1%81%D1%82%D1%80%D0%B5%D1%81%D1%81+%D0%B8%D0%B3%D1%80%D1%83%D1%88%D0%BA%D0%B0+%D1%81%D0%BA%D0%B2%D0%B8%D1%88"]]},{"name":"Сертификат на квест в реальности","desc":"Хоррор, детектив или приключение для компании 2–4 человека. 60 минут адреналина","pmin":3000,"pmax":7000,"rec":["boyfriend","girlfriend","colleague"],"occ":["birthday","valentines","general"],"tags":["fun","active","emotional"],"emoji":"🪂","buy":[["🗝 Мир Квестов","https://mir-kvestov.ru/"]]}];
+
+// ====== TELEGRAM INIT ======
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  if (tg.colorScheme === 'dark') document.body.classList.add('dark');
+  tg.onEvent('themeChanged', () => {
+    document.body.classList.toggle('dark', tg.colorScheme === 'dark');
+  });
+}
+function haptic(type='light') { try { tg?.HapticFeedback?.impactOccurred(type); } catch(e){} }
+
+// ====== КОНФИГ ФИЛЬТРОВ ======
+const FILTERS = {
+  recipient: { label: '👤 Кому дарим?', options: [
+    ['boyfriend','Парень'],['girlfriend','Девушка'],['mom','Мама'],['dad','Папа'],['colleague','Коллега']
+  ]},
+  occasion: { label: '🎉 Повод', options: [
+    ['birthday','День рождения'],['newyear','Новый год'],['valentines','14 февраля'],['march8','8 марта'],['general','Без повода']
+  ]},
+  price: { label: '💰 Бюджет', options: [
+    ['0-1000','До 1000 ₽'],['1000-3000','1–3 тыс ₽'],['3000-5000','3–5 тыс ₽'],['5000-10000','5–10 тыс ₽'],['10000-100000','От 10 тыс ₽']
+  ]},
+  focus: { label: '❤️ Что важнее', options: [
+    ['useful','Польза'],['emotional','Эмоции'],['fun','Юмор']
+  ]},
+  character: { label: '🎭 Характер', options: [
+    ['active','Активный'],['calm','Спокойный'],['romantic','Романтичный']
+  ]},
+};
+const selected = {};
+
+// ====== РЕНДЕР ФИЛЬТРОВ ======
+const filtersEl = document.getElementById('filters');
+for (const [key, cfg] of Object.entries(FILTERS)) {
+  const group = document.createElement('div');
+  group.className = 'filter-group';
+  group.innerHTML = `<div class="filter-label">${cfg.label}</div>`;
+  const chips = document.createElement('div');
+  chips.className = 'chips';
+  cfg.options.forEach(([val, text]) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = text;
+    chip.onclick = () => {
+      haptic();
+      if (selected[key] === val) { delete selected[key]; chip.classList.remove('selected'); }
+      else {
+        selected[key] = val;
+        chips.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+      }
+    };
+    chips.appendChild(chip);
+  });
+  group.appendChild(chips);
+  filtersEl.appendChild(group);
+}
+
+// ====== АЛГОРИТМ ПОДБОРА ======
+function findGifts(f) {
+  let pmin = 0, pmax = 100000;
+  if (f.price) { const [a,b] = f.price.split('-').map(Number); pmin = a; pmax = b; }
+  const cand = GIFTS.filter(g => {
+    if (f.recipient && !g.rec.includes(f.recipient)) return false;
+    if (g.pmax < pmin || g.pmin > pmax) return false;
+    return true;
+  });
+  const scored = cand.map(g => {
+    let s = 0;
+    if (f.occasion && g.occ.includes(f.occasion)) s += 3;
+    if (f.focus && g.tags.includes(f.focus)) s += 2;
+    if (f.character && g.tags.includes(f.character)) s += 2;
+    if (g.pmin >= pmin && g.pmax <= pmax) s += 1;
+    return { g, s: s + Math.random() };
+  });
+  scored.sort((a,b) => b.s - a.s);
+  return scored.slice(0, 5).map(x => x.g);
+}
+
+// ====== ССЫЛКИ КУПИТЬ (умные: товары → маркетплейсы, впечатления → сервисы) ======
+const UTM = 'utm_source=giftmatch_miniapp&utm_medium=telegram';
+function buyButtonsHtml(gift) {
+  // Если у подарка есть готовые умные ссылки — используем их
+  if (gift.buy && gift.buy.length) {
+    return gift.buy.map(([label, url]) =>
+      `<a class="buy-link" href="${url}" target="_blank" onclick="haptic()">${label}</a>`).join('');
+  }
+  // Запасной вариант (AI-подбор, старое избранное): маркетплейсы по названию
+  const q = encodeURIComponent(gift.name || '');
+  const links = {
+    '🛒 Ozon': `https://www.ozon.ru/search/?text=${q}&${UTM}`,
+    '🛍 WB': `https://www.wildberries.ru/catalog/0/search.aspx?search=${q}`,
+    '🟡 Маркет': `https://market.yandex.ru/search?text=${q}`,
+  };
+  return Object.entries(links).map(([label,url]) =>
+    `<a class="buy-link" href="${url}" target="_blank" onclick="haptic()">${label}</a>`).join('');
+}
+
+// ====== РЕНДЕР КАРТОЧКИ ======
+function giftCard(g, idx) {
+  const price = `${g.pmin.toLocaleString('ru')}–${g.pmax.toLocaleString('ru')} ₽`;
+  const isFav = favorites.some(f => f.name === g.name);
+  const linksHtml = buyButtonsHtml(g);
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.animationDelay = (idx * 0.07) + 's';
+  card.innerHTML = `
+    <div class="card-top">
+      <div class="card-emoji">${g.emoji}</div>
+      <div class="card-info">
+        <div class="card-name">${g.name}</div>
+        <div class="card-price">${price}</div>
+      </div>
+      <button class="card-fav" data-name="${g.name.replace(/"/g,'&quot;')}">${isFav ? '❤️' : '🤍'}</button>
+    </div>
+    <div class="card-desc">${g.desc}</div>
+    <div class="buy-row">${linksHtml}</div>
+  `;
+  card.querySelector('.card-fav').onclick = (e) => toggleFav(g, e.target);
+  return card;
+}
+
+// ====== ПОДБОР ПО ФИЛЬТРАМ ======
+document.getElementById('submit').onclick = () => {
+  haptic('medium');
+  const gifts = findGifts(selected);
+  showResults(gifts, 'По вашим фильтрам');
+  saveHistory(selected, gifts);
+};
+
+function showResults(gifts, title) {
+  const res = document.getElementById('results');
+  res.innerHTML = '';
+  if (!gifts.length) {
+    res.innerHTML = `<div class="empty"><div class="empty-emoji">🤔</div><div class="empty-text">Под эти параметры ничего не нашлось.<br>Попробуйте изменить бюджет или фокус.</div></div>`;
+    return;
+  }
+  const h = document.createElement('div');
+  h.className = 'results-title';
+  h.textContent = `✨ ${title} (${gifts.length})`;
+  res.appendChild(h);
+  gifts.forEach((g, i) => res.appendChild(giftCard(g, i)));
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ====== AI-ПОИСК ======
+// Запрос идёт на backend (см. flask_ai_endpoint.py). Укажите свой адрес:
+const AI_API_URL = 'https://canariodeoro.pythonanywhere.com/api/ai-suggest';
+
+document.getElementById('ai-go').onclick = runAI;
+document.getElementById('ai-input').addEventListener('keydown', e => { if (e.key === 'Enter') runAI(); });
+
+async function runAI() {
+  const text = document.getElementById('ai-input').value.trim();
+  if (!text) return;
+  haptic('medium');
+  const loader = document.getElementById('loader');
+  const results = document.getElementById('results');
+  results.innerHTML = '';
+  loader.classList.add('show');
+  document.getElementById('loader-text').textContent = 'AI подбирает идеи…';
+  try {
+    const resp = await fetch(AI_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: text }),
+    });
+    const data = await resp.json();
+    loader.classList.remove('show');
+    if (data.gifts && data.gifts.length) {
+      // AI возвращает {name, description, price} — приводим к нашему формату
+      const gifts = data.gifts.map(g => ({
+        name: g.name, desc: g.description || '',
+        emoji: g.emoji || '🎁',
+        pmin: 0, pmax: 0, priceText: g.price || '',
+        rec: [], occ: [], tags: [],
+      }));
+      showResultsAI(gifts);
+    } else {
+      results.innerHTML = `<div class="empty"><div class="empty-emoji">😶</div><div class="empty-text">AI не дал ответа. Попробуйте переформулировать или воспользуйтесь фильтрами.</div></div>`;
+    }
+  } catch (e) {
+    loader.classList.remove('show');
+    results.innerHTML = `<div class="empty"><div class="empty-emoji">⚠️</div><div class="empty-text">AI пока недоступен (не настроен сервер).<br>Воспользуйтесь подбором по фильтрам.</div></div>`;
+  }
+}
+
+function showResultsAI(gifts) {
+  const res = document.getElementById('results');
+  res.innerHTML = '';
+  const h = document.createElement('div');
+  h.className = 'results-title';
+  h.textContent = `✨ AI подобрал (${gifts.length})`;
+  res.appendChild(h);
+  gifts.forEach((g, i) => {
+    const linksHtml = buyButtonsHtml(g);
+    const isFav = favorites.some(f => f.name === g.name);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (i * 0.07) + 's';
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-emoji">${g.emoji}</div>
+        <div class="card-info">
+          <div class="card-name">${g.name}</div>
+          <div class="card-price">${g.priceText || ''}</div>
+        </div>
+        <button class="card-fav">${isFav ? '❤️' : '🤍'}</button>
+      </div>
+      <div class="card-desc">${g.desc}</div>
+      <div class="buy-row">${linksHtml}</div>`;
+    card.querySelector('.card-fav').onclick = (e) => toggleFav(g, e.target);
+    res.appendChild(card);
+  });
+}
+
+// ====== ИЗБРАННОЕ (Telegram CloudStorage) ======
+let favorites = [];
+let history = [];
+
+function cloudGet(key, cb) {
+  if (tg?.CloudStorage) tg.CloudStorage.getItem(key, (err, val) => cb(val ? JSON.parse(val) : []));
+  else { const v = localStorage.getItem(key); cb(v ? JSON.parse(v) : []); }
+}
+function cloudSet(key, value) {
+  const json = JSON.stringify(value);
+  if (tg?.CloudStorage) tg.CloudStorage.setItem(key, json);
+  else localStorage.setItem(key, json);
+}
+
+function toggleFav(g, btn) {
+  haptic();
+  const idx = favorites.findIndex(f => f.name === g.name);
+  if (idx >= 0) { favorites.splice(idx, 1); if (btn) btn.textContent = '🤍'; }
+  else { favorites.push({ name: g.name, desc: g.desc, emoji: g.emoji, buy: g.buy || null, priceText: g.priceText || `${g.pmin}–${g.pmax} ₽` }); if (btn) btn.textContent = '❤️'; }
+  cloudSet('favorites', favorites);
+  renderFav();
+}
+
+function renderFav() {
+  const el = document.getElementById('fav-list');
+  if (!favorites.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-emoji">⭐</div><div class="empty-text">Здесь будут подарки,<br>которые вы добавите в избранное.</div></div>`;
+    return;
+  }
+  el.innerHTML = '<div class="results-title">⭐ Избранное</div>';
+  favorites.forEach((g, i) => {
+    const linksHtml = buyButtonsHtml(g);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (i * 0.05) + 's';
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-emoji">${g.emoji}</div>
+        <div class="card-info">
+          <div class="card-name">${g.name}</div>
+          <div class="card-price">${g.priceText || ''}</div>
+        </div>
+        <button class="card-fav">❤️</button>
+      </div>
+      <div class="card-desc">${g.desc}</div>
+      <div class="buy-row">${linksHtml}</div>`;
+    card.querySelector('.card-fav').onclick = (e) => {
+      const idx = favorites.findIndex(f => f.name === g.name);
+      if (idx >= 0) favorites.splice(idx, 1);
+      cloudSet('favorites', favorites);
+      renderFav();
+      haptic();
+    };
+    el.appendChild(card);
+  });
+}
+
+// ====== ИСТОРИЯ ======
+function saveHistory(filters, gifts) {
+  const RECIPIENT = {boyfriend:'Парень',girlfriend:'Девушка',mom:'Мама',dad:'Папа',colleague:'Коллега'};
+  const OCCASION = {birthday:'День рождения',newyear:'Новый год',valentines:'14 февраля',march8:'8 марта',general:'Без повода'};
+  history.unshift({
+    recipient: RECIPIENT[filters.recipient] || '—',
+    occasion: OCCASION[filters.occasion] || '—',
+    gifts: gifts.map(g => g.name),
+    date: new Date().toLocaleString('ru', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }),
+  });
+  history = history.slice(0, 20);
+  cloudSet('history', history);
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!history.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-emoji">🕐</div><div class="empty-text">Здесь будет история<br>ваших подборов.</div></div>`;
+    return;
+  }
+  el.innerHTML = '<div class="results-title">🕐 История подборов</div>';
+  history.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <div><b>${h.recipient}</b> · ${h.occasion}</div>
+      <div class="history-meta">🎁 ${h.gifts.slice(0,3).join(', ')}${h.gifts.length > 3 ? ' и ещё ' + (h.gifts.length-3) : ''}</div>
+      <div class="history-date">${h.date}</div>`;
+    el.appendChild(item);
+  });
+}
+
+// ====== НАВИГАЦИЯ ======
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.onclick = () => {
+    haptic();
+    const screen = btn.dataset.screen;
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('screen-' + screen).classList.add('active');
+    if (screen === 'fav') renderFav();
+    if (screen === 'history') renderHistory();
+  };
+});
+
+// ====== ЗАГРУЗКА ДАННЫХ ПРИ СТАРТЕ ======
+cloudGet('favorites', (data) => { favorites = data || []; });
+cloudGet('history', (data) => { history = data || []; });
+</script>
+</body>
+</html>
